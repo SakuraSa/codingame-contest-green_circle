@@ -6,6 +6,12 @@ import random
 
 # Complete the hackathon before your opponent by following the principles of Green IT
 
+def shadow_input():
+    line = input()
+    print('__input__', line, file=sys.stderr)
+    return line
+
+
 class Room:
     def __init__(self, _id, attr):
         self.id = _id
@@ -56,7 +62,7 @@ class App:
         self.refactoring_needed = 0
 
     def input(self):
-        inputs = input().split()
+        inputs = shadow_input().split()
         self.object_type = inputs[0]
         self.id = int(inputs[1])
         self.training_needed = int(inputs[2])  # number of TRAINING skills needed to release this application
@@ -94,7 +100,7 @@ class Player:
         self.player_permanent_architecture_study_cards = 0
 
     def input(self):
-        inputs = input().split()
+        inputs = shadow_input().split()
         self.player_location = int(inputs[0])
         self.player_score = int(inputs[1])
         self.player_permanent_daily_routine_cards = int(inputs[2])
@@ -124,7 +130,7 @@ class Location:
         self.technical_debt_cards_count = 0
 
     def input(self):
-        inputs = input().split()
+        inputs = shadow_input().split()
         self.cards_location = inputs[0]  # the location of the card list. It can be HAND, DRAW, DISCARD or OPPONENT_CARDS (AUTOMATED and OPPONENT_AUTOMATED will appear in later leagues)
         self.training_cards_count = int(inputs[1])
         self.coding_cards_count = int(inputs[2])
@@ -170,7 +176,7 @@ class Game:
 
     def _obj_arr_read(self, cls, count=None):
         if count is None:
-            count = int(input())
+            count = int(shadow_input())
         return [cls().input() for _ in range(count)]
 
     def clone(self):
@@ -183,17 +189,16 @@ class Game:
         return g
 
     def input(self):
-        self.phase = input()
+        self.phase = shadow_input()
         self.applications = self._obj_arr_read(App)
         self.players = self._obj_arr_read(Player, count=2)
         self.locations = self._obj_arr_read(Location)
-        self.actions = [input() for _ in range(int(input()))]
+        self.actions = [shadow_input() for _ in range(int(shadow_input()))]
 
     def loop(self):
         while True:
             self.input()
 
-            print("phase", self.phase, "actions", self.actions, file=sys.stderr)
             action_and_score = [
                 (eval_game_score(self, act), act) 
                 for act in self.actions
@@ -303,7 +308,10 @@ def eval_game_score(game, action):
 
 
 def main():
-    Game().loop()
+    try:
+        Game().loop()
+    except EOFError:
+        pass
 
 
 if __name__ == '__main__':
