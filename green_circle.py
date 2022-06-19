@@ -8,8 +8,13 @@ import random
 
 def shadow_input():
     line = input()
-    print('__input__', line, file=sys.stderr)
+    # debug('__input__', line)
     return line
+
+
+def debug(*args, **wkargs):
+    wkargs['file'] = sys.stderr
+    print(*args, **wkargs)
 
 
 class Room:
@@ -204,7 +209,7 @@ class Game:
                 for act in self.actions
             ]
             action_and_score.sort()
-            print("phase", self.phase, "actions", action_and_score, file=sys.stderr)
+            debug("phase", self.phase, "actions", action_and_score)
             best_score, best_action = max(action_and_score)
 
             print(best_action)
@@ -224,7 +229,7 @@ class Game:
         if room is not None:
             room.modifity_game(self)
         else:
-            print("Warn room_id", room_id, "is not defined", file=sys.stderr)  
+            debug("Warn room_id", room_id, "is not defined")  
 
     def take_action_release(self, app_id):
         hands = None
