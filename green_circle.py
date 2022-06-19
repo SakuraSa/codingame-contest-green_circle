@@ -310,13 +310,15 @@ class Game:
 
         if remain_total > 0:
             # skill not enough
-            return
+            return False
         
         # apply changes
         self.locations = [loc for loc in self.locations if loc.cards_location != 'HAND']
         self.locations.append(hands_after_release)
         discard.technical_debt_cards_count += debt_added
         self.players[0].player_score += 1
+
+        return True
 
 
 Score = namedtuple('Score', [
@@ -368,7 +370,9 @@ def eval_game_score(game, action):
 
     # feature6: releaseable app count
     releaseable_app_count = 0
-    # TODO: to be Complete
+    for app in game.applications:
+        if game.clone().take_action_release(app.id):
+            releaseable_app_count += 1
 
     score = Score(
         player_score=player_score, 
