@@ -3,6 +3,7 @@
 import sys
 import math
 import random
+from collections import namedtuple
 
 # Complete the hackathon before your opponent by following the principles of Green IT
 
@@ -169,6 +170,18 @@ class Location:
 
     def set_skill_card_count(self, skill_name, count):
         setattr(self, skill_name + "_cards_count", count)
+    
+    def get_total_card_count(self):
+        return self.training_cards_count + \
+            self.coding_cards_count + \
+            self.daily_routine_cards_count + \
+            self.task_prioritization_cards_count + \
+            self.architecture_study_cards_count + \
+            self.continuous_delivery_cards_count + \
+            self.code_review_cards_count + \
+            self.refactoring_cards_count + \
+            self.bonus_cards_count + \
+            self.technical_debt_cards_count
 
 
 class Game:
@@ -207,10 +220,14 @@ class Game:
             action_and_score = [
                 (eval_game_score(self, act), act) 
                 for act in self.actions
+                if act != 'RANDOM'
             ]
-            action_and_score.sort()
-            debug("phase", self.phase, "actions", action_and_score)
-            best_score, best_action = max(action_and_score)
+            action_and_score.sort(reverse=True)
+
+            debug_top = 3
+            for i, (score, act) in enumerate(action_and_score[:debug_top]):
+                debug("act", i, act, score)
+            _, best_action = max(action_and_score)
 
             print(best_action)
 
@@ -299,17 +316,68 @@ class Game:
         self.locations = [loc for loc in self.locations if loc.cards_location != 'HAND']
         self.locations.append(hands_after_release)
         discard.technical_debt_cards_count += debt_added
+        self.players[0].player_score += 1
 
+
+Score = namedtuple('Score', [
+    'player_score',
+    'releaseable_app_count',
+    'debt_rate',
+    'bonus_rate',
+])
 
 
 def eval_game_score(game, action):
-    if action == 'RANDOM':
-        return 0
-
     if action != 'WAIT':
         game = game.clone().take_action(action)
 
-    return 0
+    # feature0: player score
+    player_score = game.players[0].player_score
+
+    # feature1: player hand card count
+    hands = None
+    draws = Location()
+    discard = Location()
+    for loc in game.locations:
+        if loc.cards_location == 'HAND':
+            hands = loc
+        elif loc.cards_location == 'DRAW':
+            draws = loc
+        elif loc.cards_location == 'DISCARD':
+            discard = loc
+    
+    total_cards = hands.get_total_card_count() + \
+        draws.get_total_card_count() + \
+        discard.get_total_card_count()
+    
+    # feature2: player debt count
+    total_debet = hands.technical_debt_cards_count + \
+        draws.technical_debt_cards_count + \
+        discard.technical_debt_cards_count
+    
+    # feature3: player debt rate
+    debt_rate = total_debet / float(total_cards)
+
+    # feature4: player bonus card count
+    bonus = hands.bonus_cards_count + \
+        draws.bonus_cards_count + \
+        discard.bonus_cards_count
+    
+    # feature5: player bonus card rate
+    bonus_rate = bonus / float(total_cards)
+
+    # feature6: releaseable app count
+    releaseable_app_count = 0
+    # TODO: to be Complete
+
+    score = Score(
+        player_score=player_score, 
+        releaseable_app_count=releaseable_app_count, 
+        debt_rate=-debt_rate, 
+        bonus_rate=bonus_rate,
+    )
+
+    return score
 
 
 def main():
