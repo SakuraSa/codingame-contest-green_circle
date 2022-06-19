@@ -7,6 +7,8 @@ from collections import namedtuple
 
 # Complete the hackathon before your opponent by following the principles of Green IT
 
+SCORE_DEPTH = 1
+
 def shadow_input():
     line = input()
     # debug('__input__', line)
@@ -218,7 +220,7 @@ class Game:
             self.input()
 
             action_and_score = [
-                (eval_game_score(self, act), act) 
+                (eval_game_score(self, act, SCORE_DEPTH), act) 
                 for act in self.actions
                 if act != 'RANDOM'
             ]
@@ -323,13 +325,16 @@ class Game:
 
 Score = namedtuple('Score', [
     'player_score',
-    'releaseable_app_count',
+    'future_socre',
     'debt_rate',
     'bonus_rate',
-])
+], defaults=(0, 0, 0, 0))
 
 
-def eval_game_score(game, action):
+def eval_game_score(game, action, depth=0):
+    if depth <= 0:
+        return Score()
+
     if action != 'WAIT':
         game = game.clone().take_action(action)
 
@@ -368,15 +373,27 @@ def eval_game_score(game, action):
     # feature5: player bonus card rate
     bonus_rate = bonus / float(total_cards)
 
-    # feature6: releaseable app count
-    releaseable_app_count = 0
-    for app in game.applications:
-        if game.clone().take_action_release(app.id):
-            releaseable_app_count += 1
+    # feature6: future socre
+    future_socre = Score(0, 0, 0, 0)
+    if game.phase == 'MOVE':
+        next_phase_game = game.clone()
+        next_phase_game.phase = 'RELEASE'
+        for app in game.applications:
+            future_socre = max(
+                future_socre, 
+                eval_game_score(next_phase_game, "RELEASE %d" % app.id, depth-1))
+    # # only predict future score when MOVE phase
+    # elif game.phase == 'RELEASE':
+    #     next_phase_game = game.clone()
+    #     next_phase_game.phase = 'MOVE'
+    #     for room in Rooms.values():
+    #         future_socre = max(
+    #             future_socre, 
+    #             eval_game_score(next_phase_game, "MOVE %d" % room.id, depth-1))
 
     score = Score(
         player_score=player_score, 
-        releaseable_app_count=releaseable_app_count, 
+        future_socre=future_socre, 
         debt_rate=-debt_rate, 
         bonus_rate=bonus_rate,
     )
